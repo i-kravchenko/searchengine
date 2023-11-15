@@ -7,4 +7,5 @@ import searchengine.model.Lemma;
 @Repository
 public interface LemmaRepository extends CrudRepository<Lemma, Integer>
 {
+    Lemma findBySiteIdAndLemma(Integer id, String lemma);
 }

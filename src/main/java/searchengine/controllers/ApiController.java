@@ -3,6 +3,8 @@ package searchengine.controllers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import searchengine.dto.Response;
+import searchengine.dto.exception.IndexPageException;
 import searchengine.dto.statistics.SearchQuery;
 import searchengine.dto.statistics.StatisticsResponse;
 import searchengine.model.Site;
@@ -14,7 +16,6 @@ import java.util.List;
 @RestController
 @RequestMapping("/api")
 public class ApiController {
-
     private final StatisticsService statisticsService;
     private final IndexPageService indexPageService;
 
@@ -30,22 +31,41 @@ public class ApiController {
     }
 
     @GetMapping("/startIndexing")
-    public ResponseEntity<Boolean> startIndexing() {
-        boolean result = indexPageService.startIndexing();
-        return ResponseEntity.ok(result);
+    public ResponseEntity<Response> startIndexing() {
+        try {
+            boolean result = indexPageService.startIndexing();
+            Response response = new Response(result, null);
+            return ResponseEntity.ok(response);
+        } catch (IndexPageException e) {
+            Response response =  new Response(false, e.getMessage());
+            return new ResponseEntity<>(response, e.getCode());
+        }
     }
 
     @GetMapping("/stopIndexing")
-    public ResponseEntity<Boolean> stopIndexing() {
-        boolean result = indexPageService.stopIndexing();
-        return ResponseEntity.ok(result);
+    public ResponseEntity<Response> stopIndexing()
+    {
+        try {
+            boolean result = indexPageService.stopIndexing();
+            Response response =  new Response(result, null);
+            return ResponseEntity.ok(response);
+        } catch (IndexPageException e) {
+            Response response =  new Response(false, e.getMessage());
+            return new ResponseEntity<>(response, e.getCode());
+        }
     }
 
     @PostMapping("/indexPage")
-    public ResponseEntity<Boolean> indexPage(@RequestParam String url)
+    public ResponseEntity<Response> indexPage(@RequestParam String url)
     {
-        boolean result = indexPageService.indexPage(url);
-        return ResponseEntity.ok(result);
+        try {
+            boolean result = indexPageService.indexPage(url);
+            Response response = new Response(result, null);
+            return ResponseEntity.ok(response);
+        } catch (IndexPageException e) {
+            Response response = new Response(false, e.getMessage());
+            return new ResponseEntity<>(response, e.getCode());
+        }
     }
     
     @GetMapping("/search")

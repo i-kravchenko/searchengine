@@ -4,7 +4,9 @@ import org.apache.lucene.morphology.LuceneMorphology;
 import org.apache.lucene.morphology.russian.RussianLuceneMorphology;
 import org.jsoup.Jsoup;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import searchengine.dto.exception.IndexPageException;
 import searchengine.model.Index;
 import searchengine.model.Lemma;
 import searchengine.model.Page;
@@ -28,19 +30,17 @@ public class LemmaService {
     public void parsePageContent(Page page) {
         try {
             Map<String, Integer> lemmaMap = textToLemmaToMap(page.getContent());
-            List<Lemma> lemmaList = lemmaMap.keySet()
+            lemmaMap.keySet()
                     .stream()
                     .map(word -> {
                         Lemma lemma = new Lemma();
                         lemma.setLemma(word);
                         lemma.setSite(page.getSite());
-                        return lemma;
+                        Lemma lemmaFromDb = repository
+                                .findBySiteIdAndLemma(lemma.getSite().getId(), lemma.getLemma());
+                        return lemmaFromDb == null ? repository.save(lemma) : lemma;
                     })
-                    .toList();
-            repository
-                    .saveAll(lemmaList)
                     .forEach(lemma -> {
-                        lemma = repository.save(lemma);
                         Index index = new Index();
                         index.setPage(page);
                         index.setLemma(lemma);
@@ -48,7 +48,7 @@ public class LemmaService {
                         indexRepository.save(index);
                     });
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new IndexPageException(e.getMessage(), HttpStatus.SERVICE_UNAVAILABLE);
         }
     }
 

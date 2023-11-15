@@ -3,30 +3,23 @@ package searchengine.services;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.util.Streamable;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import searchengine.config.JSOAPConfig;
 import searchengine.config.SitesList;
-import searchengine.model.Page;
+import searchengine.dto.exception.IndexPageException;
 import searchengine.model.Site;
 import searchengine.model.Status;
-import searchengine.repository.PageRepository;
 import searchengine.repository.SiteRepository;
-import searchengine.task.SiteMap;
 
-import java.net.URISyntaxException;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ForkJoinPool;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-public class SiteService
-{
+public class SiteService {
     @Autowired
     private SiteRepository siteRepository;
-    @Autowired
-    private PageRepository pageRepository;
-    private final JSOAPConfig config;
     private final SitesList sites;
 
     public List<Site> getSitesList() {
@@ -34,43 +27,51 @@ public class SiteService
     }
 
     public Site getSiteByUrl(String url) {
-        Site site = sites.getSites()
+        Optional<Site> optional = sites.getSites()
                 .stream()
                 .filter(s -> url.startsWith(s.getUrl()))
-                .findFirst().get();
-        if(site == null) {
-            throw new RuntimeException("Данная страница находится за пределами сайтов, указанных в конфигурационном файле");
+                .findFirst();
+        if (optional.isEmpty()) {
+            throw new IndexPageException("Данная страница находится за пределами сайтов, указанных в конфигурационном файле", HttpStatus.NOT_FOUND);
         }
+        Site site = optional.get();
         Site siteFromDb = siteRepository.findByUrl(site.getUrl());
-        if(siteFromDb == null) {
+        if (siteFromDb == null) {
             site.setStatus(Status.INDEXED);
-            siteRepository.save(site);
+            return siteRepository.save(site);
         } else {
-            site = siteFromDb;
+            return siteFromDb;
         }
-        return site;
     }
 
-    public boolean startIndexing() {
+    public List<Site> startIndexing() {
         siteRepository.deleteAll();
-        List<Thread> threads = new ArrayList<>();
-        sites.getSites().forEach(site -> threads.add(new Thread(() -> {
-            try {
-                site.setStatus(Status.INDEXING);
-                Page page = new Page();
-                page.setSite(siteRepository.save(site));
-                page.setPath("/");
-                new ForkJoinPool().invoke(new SiteMap(page, config, pageRepository));
-            } catch (URISyntaxException e) {
-                throw new RuntimeException(e);
-            }
-        })));
-        threads.forEach(Thread::start);
-        return true;
+        return sites.getSites()
+                .stream()
+                .map(site -> {
+                    site.setStatus(Status.INDEXING);
+                    return siteRepository.save(site);
+                }).collect(Collectors.toList());
     }
 
-    public boolean stopIndexing() {
-        SiteMap.terminate();
-        return true;
+    public void stopIndexing() {
+        List<Site> sites = siteRepository
+                .findByStatus(Status.INDEXING);
+        sites.forEach(site -> {
+            site.setStatus(Status.FAILED);
+            site.setLastError("Индексация остановлена пользователем");
+        });
+        siteRepository.saveAll(sites);
+    }
+
+    public void catchExeption(Site site, Exception e) {
+        site.setStatus(Status.FAILED);
+        site.setLastError(e.getMessage());
+        siteRepository.save(site);
+    }
+
+    public void finishIndexing(Site site) {
+        site.setStatus(Status.INDEXED);
+        siteRepository.save(site);
     }
 }
