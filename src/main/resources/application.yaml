@@ -10,8 +10,8 @@ spring:
       hibernate: 12
       dialect: org.hibernate.dialect.MySQL8Dialect
     hibernate:
-      ddl-auto: update
-    show-sql: true
+      ddl-auto: none
+    show-sql: false
 
 app:
   jsoap:
