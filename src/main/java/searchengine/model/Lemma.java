@@ -1,11 +1,14 @@
 package searchengine.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
 import javax.persistence.*;
+import java.util.List;
+import java.util.Optional;
 
 @Entity
 @Getter
@@ -22,4 +25,23 @@ public class Lemma
     private Site site;
     @Column(columnDefinition = "VARCHAR(255)", nullable = false)
     private String lemma;
+    private int frequency;
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JsonIgnore
+    @JoinTable(
+            name = "idx",
+            joinColumns = @JoinColumn(name = "lemma_id", referencedColumnName = "id"),
+            inverseJoinColumns = @JoinColumn(name = "page_id", referencedColumnName = "id")
+    )
+    private List<Page> pages;
+    @OneToMany(mappedBy = "lemma")
+    @JsonIgnore
+    private List<Index> indices;
+
+    public float getPageRank(Page page) {
+        Optional<Float> rank = indices.stream()
+                .filter(index -> index.getPage().equals(page))
+                .map(Index::getRank).findFirst();
+        return rank.isPresent() ? rank.get() : 0;
+    }
 }

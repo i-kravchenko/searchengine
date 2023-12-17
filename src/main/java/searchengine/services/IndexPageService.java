@@ -5,12 +5,11 @@ import lombok.SneakyThrows;
 import org.jsoup.Jsoup;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import searchengine.dto.exception.IndexPageException;
-import searchengine.dto.statistics.SearchQuery;
 import searchengine.model.Page;
 import searchengine.model.Site;
+import searchengine.model.Status;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -34,7 +33,7 @@ public class IndexPageService {
 
     class SiteMap extends RecursiveTask<Set<Page>> {
         private Page page;
-        public static boolean indexIsStarted = false;
+        private static boolean indexIsStarted = false;
 
         SiteMap(Page page) {
             this.page = page;
@@ -54,7 +53,8 @@ public class IndexPageService {
                     .select("a")
                     .stream()
                     .map(link -> formatUri(link.attr("href")))
-                    .filter(page -> !page.getPath().equals(page.getUri()))
+                    .filter(page -> !page.getPath().equals(this.page.getPath()))
+                    .filter(page -> pageService.findPage(page) == null)
                     .collect(Collectors.toSet());
             for (Page page : siteMap) {
                 SiteMap map = new SiteMap(page);
@@ -97,7 +97,7 @@ public class IndexPageService {
     }
 
     public boolean startIndexing() {
-        if(SiteMap.indexIsStarted) {
+        if (SiteMap.indexIsStarted) {
             throw new IndexPageException("Индексация уже запущена", HttpStatus.BAD_REQUEST);
         }
         List<Thread> threads = new ArrayList<>();
@@ -110,9 +110,14 @@ public class IndexPageService {
                         page.setSite(site);
                         page.setPath("/");
                         new ForkJoinPool().invoke(new SiteMap(page));
+                        lemmaService.computeFrequency(site);
                         siteService.finishIndexing(site);
                     } catch (Exception e) {
-                        siteService.catchExeption(site, e);
+                        lemmaService.computeFrequency(site);
+                        siteService.catchException(site, e);
+                        if (siteService.getSitesByStatus(Status.INDEXING).isEmpty()) {
+                            SiteMap.indexIsStarted = false;
+                        }
                     }
                 })));
         threads.forEach(Thread::start);
@@ -120,15 +125,11 @@ public class IndexPageService {
     }
 
     public boolean stopIndexing() {
-        if(!SiteMap.indexIsStarted) {
+        if (!SiteMap.indexIsStarted) {
             throw new IndexPageException("Индексация не запущена", HttpStatus.BAD_REQUEST);
         }
         siteService.stopIndexing();
         SiteMap.indexIsStarted = false;
         return true;
-    }
-
-    public ResponseEntity<List<Site>> search(SearchQuery searchQuery) {
-        return null;
     }
 }

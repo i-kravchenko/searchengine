@@ -1,21 +1,26 @@
 package searchengine.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
 import javax.persistence.*;
+import java.util.List;
+import java.util.Objects;
 
 @Entity
 @Getter
 @Setter
 @Table(uniqueConstraints = {@UniqueConstraint(columnNames = {"site_id", "path"})})
-public class Page {
+public class Page implements Comparable<Page>
+{
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JsonIgnore
     @OnDelete(action = OnDeleteAction.CASCADE)
     @JoinColumn(name = "site_id", nullable = false)
     private Site site;
@@ -24,10 +29,21 @@ public class Page {
     private int code;
     @Column(columnDefinition = "MEDIUMTEXT", nullable = false)
     private String content;
-//    @OneToMany(mappedBy = "page", cascade = CascadeType.ALL)
-//    private List<Index> indexes;
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JsonIgnore
+    @JoinTable(
+            name = "idx",
+            joinColumns = @JoinColumn(name = "page_id", referencedColumnName = "id"),
+            inverseJoinColumns = @JoinColumn(name = "lemma_id", referencedColumnName = "id")
+    )
+    private List<Lemma> lemmas;
 
-    public String getUri() {
-        return getSite().getUrl() + getPath();
+    @Override
+    public int compareTo(Page page) {
+        int result = getSite().getId().compareTo(page.getSite().getId());
+        if(result == 0) {
+            result = getPath().compareTo(page.getPath());
+        }
+        return result;
     }
 }

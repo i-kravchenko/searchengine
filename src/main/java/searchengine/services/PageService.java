@@ -2,15 +2,17 @@ package searchengine.services;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.jsoup.select.Elements;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import searchengine.config.JsoupConfig;
+import searchengine.dto.config.JsoupConfig;
 import searchengine.dto.exception.IndexPageException;
 import searchengine.model.Page;
 import searchengine.repository.PageRepository;
 
 import java.io.IOException;
+import java.util.Objects;
 
 @Service
 public class PageService
@@ -33,11 +35,19 @@ public class PageService
             Page pageFromDb = repository.findBySiteIdAndPath(page.getSite().getId(), page.getPath());
             if(pageFromDb != null) {
                 page.setId(pageFromDb.getId());
-                page = pageFromDb;
             }
             return repository.save(page);
         } catch (IOException e) {
             throw new IndexPageException(e.getMessage(), HttpStatus.SERVICE_UNAVAILABLE);
         }
+    }
+
+    public Elements getPageElements(Page page, String selector) {
+        String content = page.getContent();
+        return Objects.requireNonNull(Jsoup.parse(content).select(selector));
+    }
+
+    public Page findPage(Page page) {
+        return repository.findBySiteIdAndPath(page.getSite().getId(), page.getPath());
     }
 }

@@ -2,8 +2,6 @@ package searchengine.model;
 
 import lombok.Getter;
 import lombok.Setter;
-import org.hibernate.annotations.OnDelete;
-import org.hibernate.annotations.OnDeleteAction;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import javax.persistence.*;
@@ -30,9 +28,9 @@ public class Site
     private String url;
     @Column(columnDefinition = "VARCHAR(255)", nullable = false)
     private String name;
-    @OneToMany(mappedBy = "site", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "site", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Page> pages;
-    @OneToMany(mappedBy = "site", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "site", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Lemma> lemmas;
 
 }

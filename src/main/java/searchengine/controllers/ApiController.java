@@ -7,22 +7,22 @@ import searchengine.dto.Response;
 import searchengine.dto.exception.IndexPageException;
 import searchengine.dto.statistics.SearchQuery;
 import searchengine.dto.statistics.StatisticsResponse;
-import searchengine.model.Site;
 import searchengine.services.IndexPageService;
+import searchengine.services.SearchService;
 import searchengine.services.StatisticsService;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api")
 public class ApiController {
     private final StatisticsService statisticsService;
     private final IndexPageService indexPageService;
+    private final SearchService searchService;
 
     @Autowired
-    public ApiController(StatisticsService statisticsService, IndexPageService indexPageService) {
+    public ApiController(StatisticsService statisticsService, IndexPageService indexPageService, SearchService searchService) {
         this.statisticsService = statisticsService;
         this.indexPageService = indexPageService;
+        this.searchService = searchService;
     }
 
     @GetMapping("/statistics")
@@ -37,27 +37,25 @@ public class ApiController {
             Response response = new Response(result, null);
             return ResponseEntity.ok(response);
         } catch (IndexPageException e) {
-            Response response =  new Response(false, e.getMessage());
+            Response response = new Response(false, e.getMessage());
             return new ResponseEntity<>(response, e.getCode());
         }
     }
 
     @GetMapping("/stopIndexing")
-    public ResponseEntity<Response> stopIndexing()
-    {
+    public ResponseEntity<Response> stopIndexing() {
         try {
             boolean result = indexPageService.stopIndexing();
-            Response response =  new Response(result, null);
+            Response response = new Response(result, null);
             return ResponseEntity.ok(response);
         } catch (IndexPageException e) {
-            Response response =  new Response(false, e.getMessage());
+            Response response = new Response(false, e.getMessage());
             return new ResponseEntity<>(response, e.getCode());
         }
     }
 
     @PostMapping("/indexPage")
-    public ResponseEntity<Response> indexPage(@RequestParam String url)
-    {
+    public ResponseEntity<Response> indexPage(@RequestParam String url) {
         try {
             boolean result = indexPageService.indexPage(url);
             Response response = new Response(result, null);
@@ -67,9 +65,15 @@ public class ApiController {
             return new ResponseEntity<>(response, e.getCode());
         }
     }
-    
+
     @GetMapping("/search")
-    public ResponseEntity<List<Site>> search(@RequestBody SearchQuery searchQuery) {
-        return indexPageService.search(searchQuery);
+    public ResponseEntity<Response> search(
+            @RequestParam String query,
+            @RequestParam(required = false, defaultValue = "0") int offset,
+            @RequestParam(required = false, defaultValue = "20") int limit,
+            @RequestParam(required = false, defaultValue = "0") int site
+    ) {
+        SearchQuery searchQuery = new SearchQuery(query, offset, limit, site);
+        return ResponseEntity.ok(searchService.search(searchQuery));
     }
 }

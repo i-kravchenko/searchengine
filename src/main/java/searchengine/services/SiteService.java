@@ -5,7 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.util.Streamable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import searchengine.config.SitesList;
+import searchengine.dto.config.SitesList;
 import searchengine.dto.exception.IndexPageException;
 import searchengine.model.Site;
 import searchengine.model.Status;
@@ -46,32 +46,42 @@ public class SiteService {
 
     public List<Site> startIndexing() {
         siteRepository.deleteAll();
-        return sites.getSites()
+        List<Site> siteList = sites.getSites()
                 .stream()
-                .map(site -> {
-                    site.setStatus(Status.INDEXING);
-                    return siteRepository.save(site);
-                }).collect(Collectors.toList());
+                .peek(site -> site.setStatus(Status.INDEXING))
+                .toList();
+        return (List<Site>) siteRepository.saveAll(siteList);
     }
 
     public void stopIndexing() {
-        List<Site> sites = siteRepository
-                .findByStatus(Status.INDEXING);
-        sites.forEach(site -> {
-            site.setStatus(Status.FAILED);
-            site.setLastError("Индексация остановлена пользователем");
-        });
+        List<Site> sites = getSitesByStatus(Status.INDEXING)
+                .stream()
+                .peek(site -> {
+                    site.setStatus(Status.FAILED);
+                    site.setLastError("Индексация остановлена пользователем");
+                }).collect(Collectors.toList());
         siteRepository.saveAll(sites);
     }
 
-    public void catchExeption(Site site, Exception e) {
+    public List<Site> getSitesByStatus(Status status) {
+        return siteRepository
+                .findByStatus(status);
+    }
+
+    public void catchException(Site site, Exception e) {
         site.setStatus(Status.FAILED);
         site.setLastError(e.getMessage());
         siteRepository.save(site);
     }
 
     public void finishIndexing(Site site) {
-        site.setStatus(Status.INDEXED);
-        siteRepository.save(site);
+        boolean isIndexing = siteRepository
+                .findByUrl(site.getUrl())
+                .getStatus()
+                .equals(Status.INDEXED);
+        if (isIndexing) {
+            site.setStatus(Status.INDEXED);
+            siteRepository.save(site);
+        }
     }
 }

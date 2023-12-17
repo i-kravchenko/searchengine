@@ -4,6 +4,7 @@ import lombok.Data;
 
 @Data
 public class DetailedStatisticsItem {
+    private int id;
     private String url;
     private String name;
     private String status;

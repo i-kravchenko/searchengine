@@ -1604,7 +1604,7 @@ var API = function(){
                             
                         }
                         $('select[name="site"]').append('' +
-                            '<option value="' + site.url + '">' +
+                            '<option value="' + site.id + '">' +
                                 site.url +
                             '</option>')
                         $blockSiteExample.removeClass('Statistics-example');
