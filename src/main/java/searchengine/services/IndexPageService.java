@@ -100,27 +100,30 @@ public class IndexPageService {
         if (SiteMap.indexIsStarted) {
             throw new IndexPageException("Индексация уже запущена", HttpStatus.BAD_REQUEST);
         }
-        List<Thread> threads = new ArrayList<>();
         SiteMap.indexIsStarted = true;
-        siteService
-                .startIndexing()
-                .forEach(site -> threads.add(new Thread(() -> {
-                    try {
-                        Page page = new Page();
-                        page.setSite(site);
-                        page.setPath("/");
-                        new ForkJoinPool().invoke(new SiteMap(page));
-                        lemmaService.computeFrequency(site);
-                        siteService.finishIndexing(site);
-                    } catch (Exception e) {
-                        lemmaService.computeFrequency(site);
-                        siteService.catchException(site, e);
-                        if (siteService.getSitesByStatus(Status.INDEXING).isEmpty()) {
-                            SiteMap.indexIsStarted = false;
+        Thread thread = new Thread(() -> {
+            List<Thread> threads = new ArrayList<>();
+            siteService
+                    .startIndexing()
+                    .forEach(site -> threads.add(new Thread(() -> {
+                        try {
+                            Page page = new Page();
+                            page.setSite(site);
+                            page.setPath("/");
+                            new ForkJoinPool().invoke(new SiteMap(page));
+                            lemmaService.computeFrequency(site);
+                            siteService.finishIndexing(site);
+                        } catch (Exception e) {
+                            lemmaService.computeFrequency(site);
+                            siteService.catchException(site, e);
+                            if (siteService.getSitesByStatus(Status.INDEXING).isEmpty()) {
+                                SiteMap.indexIsStarted = false;
+                            }
                         }
-                    }
-                })));
-        threads.forEach(Thread::start);
+                    })));
+            threads.forEach(Thread::start);
+        });
+        thread.start();
         return true;
     }
 
