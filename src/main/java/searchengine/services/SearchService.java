@@ -1,5 +1,6 @@
 package searchengine.services;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.lucene.morphology.LuceneMorphology;
 import org.apache.lucene.morphology.russian.RussianLuceneMorphology;
 import org.jsoup.Jsoup;
@@ -23,6 +24,7 @@ import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 public class SearchService {
     @Autowired
@@ -47,8 +49,10 @@ public class SearchService {
             response.setCount(page.getTotalElements());
             List<SearchResult> data = getSearchResults(lemmaSet, page.getContent());
             response.setData(data);
+            log.info("Result of calling the search method: {}", response);
             return response;
         } catch (Exception e) {
+            log.error("An error occurred in the search method", e);
             throw new IndexPageException(e.getMessage(), HttpStatus.BAD_REQUEST);
         }
     }
@@ -117,6 +121,7 @@ public class SearchService {
         try {
             luceneMorph = new RussianLuceneMorphology();
         } catch (IOException e) {
+            log.error("An error occurred in the SearchService:findFragmentsInText method", e);
             throw new IndexPageException(e.getMessage(), HttpStatus.SERVICE_UNAVAILABLE);
         }
         int start = 0;

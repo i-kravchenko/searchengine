@@ -2,6 +2,7 @@ package searchengine.services;
 
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -21,6 +22,7 @@ import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.RecursiveTask;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class IndexPageService {
@@ -80,7 +82,8 @@ public class IndexPageService {
                 } else if (path.matches("[a-z-_]+")) {
                     newPage.setPath(new URI(path).getPath());
                 }
-            } catch (URISyntaxException ignored) {
+            } catch (URISyntaxException e) {
+                log.error("An error occurred in the IndexPageService:formatUri method", e);
             }
             return newPage;
         }
@@ -114,6 +117,7 @@ public class IndexPageService {
                             lemmaService.computeFrequency(site);
                             siteService.finishIndexing(site);
                         } catch (Exception e) {
+                            log.error("An error occurred in the IndexPageService:startIndexing method", e);
                             lemmaService.computeFrequency(site);
                             siteService.catchException(site, e);
                             if (siteService.getSitesByStatus(Status.INDEXING).isEmpty()) {

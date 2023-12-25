@@ -1,6 +1,7 @@
 package searchengine.services;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import searchengine.dto.statistics.DetailedStatisticsItem;
 import searchengine.dto.statistics.StatisticsData;
@@ -12,6 +13,7 @@ import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class StatisticsServiceImpl implements StatisticsService
@@ -47,6 +49,7 @@ public class StatisticsServiceImpl implements StatisticsService
         data.setDetailed(detailed);
         response.setStatistics(data);
         response.setResult(true);
+        log.info("Result of calling the statistics method: {}", response);
         return response;
     }
 }

@@ -1,5 +1,6 @@
 package searchengine.services;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.lucene.morphology.LuceneMorphology;
 import org.apache.lucene.morphology.russian.RussianLuceneMorphology;
 import org.jsoup.Jsoup;
@@ -18,6 +19,7 @@ import searchengine.repository.LemmaRepository;
 import java.io.IOException;
 import java.util.*;
 
+@Slf4j
 @Service
 public class LemmaService {
     @Autowired
@@ -44,6 +46,7 @@ public class LemmaService {
                 indexRepository.save(index);
             });
         } catch (IOException e) {
+            log.error("An error occurred in the LemmaService:parsePageContent method", e);
             throw new IndexPageException(e.getMessage(), HttpStatus.SERVICE_UNAVAILABLE);
         }
     }

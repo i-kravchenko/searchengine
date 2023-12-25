@@ -1,5 +1,6 @@
 package searchengine.services;
 
+import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
@@ -14,6 +15,7 @@ import searchengine.repository.PageRepository;
 import java.io.IOException;
 import java.util.Objects;
 
+@Slf4j
 @Service
 public class PageService
 {
@@ -38,6 +40,7 @@ public class PageService
             }
             return repository.save(page);
         } catch (IOException e) {
+            log.error("An error occurred in the PageService:loadPageContent method", e);
             throw new IndexPageException(e.getMessage(), HttpStatus.SERVICE_UNAVAILABLE);
         }
     }
