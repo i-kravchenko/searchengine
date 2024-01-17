@@ -1,7 +1,6 @@
 package searchengine.services;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.util.Streamable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -18,8 +17,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class SiteService {
-    @Autowired
-    private SiteRepository siteRepository;
+    private final SiteRepository siteRepository;
     private final SitesList sites;
 
     public List<Site> getSitesList() {
@@ -68,9 +66,9 @@ public class SiteService {
                 .findByStatus(status);
     }
 
-    public void catchException(Site site, Exception e) {
+    public void catchException(Site site) {
         site.setStatus(Status.FAILED);
-        site.setLastError(e.getMessage());
+        site.setLastError("Во время индексации произошла ошибка.");
         siteRepository.save(site);
     }
 

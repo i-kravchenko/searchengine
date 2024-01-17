@@ -1,10 +1,10 @@
 package searchengine.services;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.lucene.morphology.LuceneMorphology;
 import org.apache.lucene.morphology.russian.RussianLuceneMorphology;
 import org.jsoup.Jsoup;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -21,12 +21,10 @@ import java.util.*;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class LemmaService {
-    @Autowired
-    private LemmaRepository repository;
-
-    @Autowired
-    private IndexRepository indexRepository;
+    private final LemmaRepository repository;
+    private final IndexRepository indexRepository;
 
     public void parsePageContent(Page page) {
         try {

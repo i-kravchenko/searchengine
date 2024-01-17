@@ -1,7 +1,7 @@
 package searchengine.controllers;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import searchengine.dto.Response;
@@ -15,17 +15,11 @@ import searchengine.services.StatisticsService;
 @RestController
 @RequestMapping("/api")
 @Slf4j
+@RequiredArgsConstructor
 public class ApiController {
     private final StatisticsService statisticsService;
     private final IndexPageService indexPageService;
     private final SearchService searchService;
-
-    @Autowired
-    public ApiController(StatisticsService statisticsService, IndexPageService indexPageService, SearchService searchService) {
-        this.statisticsService = statisticsService;
-        this.indexPageService = indexPageService;
-        this.searchService = searchService;
-    }
 
     @GetMapping("/statistics")
     public ResponseEntity<StatisticsResponse> statistics() {
