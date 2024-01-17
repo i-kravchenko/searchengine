@@ -16,11 +16,11 @@ public class Index
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne
     @JoinColumn(name = "page_id", nullable = false)
     @OnDelete(action = OnDeleteAction.CASCADE)
     private Page page;
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne
     @JoinColumn(name = "lemma_id", nullable = false)
     @OnDelete(action = OnDeleteAction.CASCADE)
     private Lemma lemma;

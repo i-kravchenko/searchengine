@@ -12,7 +12,6 @@ import searchengine.dto.exception.IndexPageException;
 import searchengine.model.Index;
 import searchengine.model.Lemma;
 import searchengine.model.Page;
-import searchengine.model.Site;
 import searchengine.repository.IndexRepository;
 import searchengine.repository.LemmaRepository;
 
@@ -26,23 +25,30 @@ public class LemmaService {
     private final LemmaRepository repository;
     private final IndexRepository indexRepository;
 
-    public void parsePageContent(Page page) {
+    public synchronized void parsePageContent(Page page) {
         try {
             Map<String, Integer> lemmaMap = textToLemmaMap(page.getContent());
             List<Lemma> lemmaList = lemmaMap.keySet().stream().map(word -> {
                 Lemma lemma = new Lemma();
                 lemma.setLemma(word);
+                lemma.setFrequency(1);
                 lemma.setSite(page.getSite());
                 Lemma lemmaFromDb = repository.findBySiteIdAndLemma(lemma.getSite().getId(), lemma.getLemma());
-                return lemmaFromDb == null ? repository.save(lemma) : lemmaFromDb;
+                if(lemmaFromDb != null) {
+                    lemma.setId(lemmaFromDb.getId());
+                    lemma.setFrequency(lemmaFromDb.getFrequency() + 1);
+                }
+                return lemma;
             }).toList();
-            lemmaList.forEach(lemma -> {
+            List<Index> indices = new ArrayList<>();
+            repository.saveAll(lemmaList).forEach(lemma -> {
                 Index index = new Index();
                 index.setPage(page);
                 index.setLemma(lemma);
                 index.setRank(lemmaMap.get(lemma.getLemma()));
-                indexRepository.save(index);
+                indices.add(index);
             });
+            indexRepository.saveAll(indices);
         } catch (IOException e) {
             log.error("An error occurred in the LemmaService:parsePageContent method", e);
             throw new IndexPageException(e.getMessage(), HttpStatus.SERVICE_UNAVAILABLE);
@@ -83,12 +89,5 @@ public class LemmaService {
 
     public org.springframework.data.domain.Page<Lemma> getLemmasByLemmasList(int siteId, Set<String> lemmas, Pageable pageable) {
         return repository.findDistinctBySiteIdAndLemmaInOrderByFrequency(siteId, lemmas, pageable);
-    }
-
-    public void computeFrequency(Site site) {
-        List<Lemma> lemmaList = repository.findAllBySiteId(site.getId())
-                .stream()
-                .peek(lemma -> lemma.setFrequency(lemma.getPages().size())).toList();
-        repository.saveAll(lemmaList);
     }
 }

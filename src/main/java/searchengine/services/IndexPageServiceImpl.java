@@ -53,7 +53,6 @@ public class IndexPageServiceImpl implements IndexPageService
                     .stream()
                     .map(link -> formatUri(link.attr("href")))
                     .filter(page -> !page.getPath().equals(this.page.getPath()))
-                    .filter(page -> pageService.findPage(page) == null)
                     .collect(Collectors.toSet());
             for (Page page : siteMap) {
                 SiteMap map = new SiteMap(page);
@@ -113,11 +112,10 @@ public class IndexPageServiceImpl implements IndexPageService
                             page.setSite(site);
                             page.setPath("/");
                             new ForkJoinPool().invoke(new SiteMap(page));
-                            lemmaService.computeFrequency(site);
                             siteService.finishIndexing(site);
+                            SiteMap.indexIsStarted = false;
                         } catch (Exception e) {
                             log.error("An error occurred in the IndexPageService:startIndexing method", e);
-                            lemmaService.computeFrequency(site);
                             siteService.catchException(site);
                             if (siteService.getSitesByStatus(Status.INDEXING).isEmpty()) {
                                 SiteMap.indexIsStarted = false;

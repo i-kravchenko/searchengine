@@ -1,6 +1,5 @@
 package searchengine.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.OnDelete;
@@ -18,8 +17,7 @@ public class Page implements Comparable<Page>
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JsonIgnore
+    @ManyToOne
     @OnDelete(action = OnDeleteAction.CASCADE)
     @JoinColumn(name = "site_id", nullable = false)
     private Site site;
@@ -29,7 +27,6 @@ public class Page implements Comparable<Page>
     @Column(columnDefinition = "MEDIUMTEXT", nullable = false)
     private String content;
     @ManyToMany(fetch = FetchType.LAZY)
-    @JsonIgnore
     @JoinTable(
             name = "idx",
             joinColumns = @JoinColumn(name = "page_id", referencedColumnName = "id"),

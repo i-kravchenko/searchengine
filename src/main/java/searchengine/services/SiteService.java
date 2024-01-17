@@ -76,7 +76,7 @@ public class SiteService {
         boolean isIndexing = siteRepository
                 .findByUrl(site.getUrl())
                 .getStatus()
-                .equals(Status.INDEXED);
+                .equals(Status.INDEXING);
         if (isIndexing) {
             site.setStatus(Status.INDEXED);
             siteRepository.save(site);

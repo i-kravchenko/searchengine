@@ -1,6 +1,5 @@
 package searchengine.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.OnDelete;
@@ -27,7 +26,6 @@ public class Lemma
     private String lemma;
     private int frequency;
     @ManyToMany(fetch = FetchType.EAGER)
-    @JsonIgnore
     @JoinTable(
             name = "idx",
             joinColumns = @JoinColumn(name = "lemma_id", referencedColumnName = "id"),
@@ -35,7 +33,6 @@ public class Lemma
     )
     private List<Page> pages;
     @OneToMany(mappedBy = "lemma")
-    @JsonIgnore
     private List<Index> indices;
 
     public float getPageRank(Page page) {

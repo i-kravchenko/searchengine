@@ -33,10 +33,7 @@ public class PageService
             page.setCode(document.connection().response().statusCode());
             page.setContent(document.toString());
             Page pageFromDb = repository.findBySiteIdAndPath(page.getSite().getId(), page.getPath());
-            if(pageFromDb != null) {
-                page.setId(pageFromDb.getId());
-            }
-            return repository.save(page);
+            return pageFromDb != null ? pageFromDb : repository.save(page);
         } catch (IOException e) {
             log.error("An error occurred in the PageService:loadPageContent method", e);
             throw new IndexPageException(e.getMessage(), HttpStatus.SERVICE_UNAVAILABLE);
