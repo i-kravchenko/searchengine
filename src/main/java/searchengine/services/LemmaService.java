@@ -5,13 +5,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.lucene.morphology.LuceneMorphology;
 import org.apache.lucene.morphology.russian.RussianLuceneMorphology;
 import org.jsoup.Jsoup;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import searchengine.dto.exception.IndexPageException;
 import searchengine.model.Index;
 import searchengine.model.Lemma;
 import searchengine.model.Page;
+import searchengine.model.Site;
 import searchengine.repository.IndexRepository;
 import searchengine.repository.LemmaRepository;
 
@@ -35,8 +35,8 @@ public class LemmaService {
                 lemma.setSite(page.getSite());
                 Lemma lemmaFromDb = repository.findBySiteIdAndLemma(lemma.getSite().getId(), lemma.getLemma());
                 if(lemmaFromDb != null) {
-                    lemma.setId(lemmaFromDb.getId());
-                    lemma.setFrequency(lemmaFromDb.getFrequency() + 1);
+                    lemmaFromDb.setFrequency(lemmaFromDb.getFrequency() + 1);
+                    return lemmaFromDb;
                 }
                 return lemma;
             }).toList();
@@ -83,11 +83,25 @@ public class LemmaService {
         return false;
     }
 
-    public org.springframework.data.domain.Page<Lemma> getLemmasByLemmasList(Set<String> lemmas, Pageable pageable) {
-        return repository.findDistinctByLemmaInOrderByFrequency(lemmas, pageable);
+    public void computeFrequency(Site site) {
+        List<Lemma> lemmaList = repository.findAllBySiteId(site.getId())
+                .stream()
+                .peek(lemma -> {
+                    lemma.setFrequency(lemma.getPages().size());
+                }).toList();
+        repository.saveAll(lemmaList);
     }
 
-    public org.springframework.data.domain.Page<Lemma> getLemmasByLemmasList(int siteId, Set<String> lemmas, Pageable pageable) {
-        return repository.findDistinctBySiteIdAndLemmaInOrderByFrequency(siteId, lemmas, pageable);
+    private Integer getFrequencyMaxValue() {
+        Integer maxFrequency = repository.getMaxFrequency();
+        return (int) (maxFrequency * 0.8);
+    }
+
+    public List<Lemma> findLemmas(Set<String> lemmas) {
+        return repository.findAllByLemmaInAndFrequencyLessThanOrderByFrequency(lemmas, getFrequencyMaxValue());
+    }
+
+    public List<Lemma> findLemmas(Integer siteId, Set<String> lemmas) {
+        return repository.findAllBySiteIdAndLemmaInAndFrequencyLessThanOrderByFrequency(siteId, lemmas, getFrequencyMaxValue());
     }
 }

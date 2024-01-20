@@ -18,14 +18,14 @@ public class Lemma
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @OnDelete(action = OnDeleteAction.CASCADE)
     @JoinColumn(name = "site_id", nullable = false)
     private Site site;
     @Column(columnDefinition = "VARCHAR(255)", nullable = false)
     private String lemma;
     private int frequency;
-    @ManyToMany(fetch = FetchType.EAGER)
+    @ManyToMany
     @JoinTable(
             name = "idx",
             joinColumns = @JoinColumn(name = "lemma_id", referencedColumnName = "id"),

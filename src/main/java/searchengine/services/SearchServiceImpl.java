@@ -27,8 +27,7 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class SearchServiceImpl implements SearchService
-{
+public class SearchServiceImpl implements SearchService {
     private final LemmaService lemmaService;
     private final PageService pageService;
     @Value("${app.snippet-size}")
@@ -38,17 +37,31 @@ public class SearchServiceImpl implements SearchService
     public SearchResponse search(SearchQuery searchQuery) {
         try {
             int siteId = searchQuery.getSite();
+            SearchResponse response = new SearchResponse(true, null);
             Set<String> lemmaSet = lemmaService.textToLemmaMap(searchQuery.getQuery()).keySet();
             Pageable pageable = PageRequest.of(searchQuery.getOffset(), searchQuery.getLimit());
-            org.springframework.data.domain.Page<Lemma> page;
+            List<Lemma> lemmas;
             if (siteId == 0) {
-                page = lemmaService.getLemmasByLemmasList(lemmaSet, pageable);
+                lemmas = lemmaService.findLemmas(lemmaSet);
             } else {
-                page = lemmaService.getLemmasByLemmasList(siteId, lemmaSet, pageable);
+                lemmas = lemmaService.findLemmas(siteId, lemmaSet);
             }
-            SearchResponse response = new SearchResponse(true, null);
+            if (lemmas.isEmpty()) {
+                return response;
+            }
+            List<Integer> lemmasId = lemmas
+                    .stream()
+                    .map(Lemma::getId)
+                    .toList();
+            org.springframework.data.domain.Page<Page> page = pageService.getPagesByLemmasList(lemmasId, pageable);
             response.setCount(page.getTotalElements());
-            List<SearchResult> data = getSearchResults(lemmaSet, page.getContent());
+            List<Page> pages = page.getContent();
+            pages = pages.stream().peek(p -> p.setLemmas(p.getLemmas()
+                    .stream()
+                    .filter(lemma -> lemmasId.contains(lemma.getId()))
+                    .toList()
+            )).toList();
+            List<SearchResult> data = getSearchResults(lemmaSet, pages);
             response.setData(data);
             log.info("Result of calling the search method: {}", response);
             return response;
@@ -58,8 +71,8 @@ public class SearchServiceImpl implements SearchService
         }
     }
 
-    private List<SearchResult> getSearchResults(Set<String> searchQuerySet, List<Lemma> lemmas) {
-        List<SearchResult> data = lemmaListToPageList(lemmas)
+    private List<SearchResult> getSearchResults(Set<String> searchQuerySet, List<Page> pages) {
+        List<SearchResult> data = pages
                 .stream()
                 .map(p -> {
                     Site site = p.getSite();
@@ -73,10 +86,13 @@ public class SearchServiceImpl implements SearchService
                     });
                     TextFragment fragment = fragments.get(0);
                     int size = snippetSize - fragment.getFragment().length();
-                    int start = fragment.getStart() - size / 2;
+                    int start = 0;
+                    if (fragment.getStart() >= size / 2) {
+                        start = fragment.getStart() - size / 2;
+                    }
                     int end = start + snippetSize + 1;
                     String snippet = content.substring(start, end)
-                            .replace(fragment.getFragment(), "<b>" + fragment.getFragment()  + "</b>");
+                            .replace(fragment.getFragment(), "<b>" + fragment.getFragment() + "</b>");
                     float relevance = getPageAbsRelevance(p);
                     Element title = Objects.requireNonNull(pageService.getPageElements(p, "title").first());
                     return new SearchResult(
@@ -95,25 +111,6 @@ public class SearchServiceImpl implements SearchService
             data = data.stream().peek(searchResult -> searchResult.setRelevance(searchResult.getRelevance() / max)).toList();
         }
         return data;
-    }
-
-    private List<Page> lemmaListToPageList(List<Lemma> lemmas) {
-        Map<Page, List<Lemma>> pageListMap = new TreeMap<>();
-        lemmas.stream()
-                .filter(lemma -> !lemma.getPages().isEmpty())
-                .forEach(lemma -> lemma.getPages().forEach(page -> {
-                    List<Lemma> lemmaList = new ArrayList<>();
-                    if (pageListMap.containsKey(page)) {
-                        lemmaList = pageListMap.get(page);
-                    }
-                    lemmaList.add(lemma);
-                    pageListMap.put(page, lemmaList);
-                }));
-        return pageListMap
-                .keySet()
-                .stream()
-                .peek(page -> page.setLemmas(pageListMap.get(page)))
-                .toList();
     }
 
     private List<TextFragment> findFragmentsInText(String text, Collection<String> query) {

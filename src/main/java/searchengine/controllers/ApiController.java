@@ -79,6 +79,10 @@ public class ApiController {
             @RequestParam(required = false, defaultValue = "20") int limit,
             @RequestParam(required = false, defaultValue = "0") int site
     ) {
+        if(query.isBlank()) {
+            Response response = new Response(false, "query is required");
+            return ResponseEntity.badRequest().body(response);
+        }
         log.info("method /search was called");
         SearchQuery searchQuery = new SearchQuery(query, offset, limit, site);
         return ResponseEntity.ok(searchService.search(searchQuery));

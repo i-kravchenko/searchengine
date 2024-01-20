@@ -93,6 +93,7 @@ public class IndexPageServiceImpl implements IndexPageService
         page.setPath(url.replace(site.getUrl(), ""));
         page = pageService.loadPageContent(page);
         lemmaService.parsePageContent(page);
+        lemmaService.computeFrequency(site);
         return true;
     }
 

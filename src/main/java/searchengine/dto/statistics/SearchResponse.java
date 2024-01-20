@@ -10,7 +10,7 @@ import java.util.List;
 @Setter
 public class SearchResponse extends Response
 {
-    private long count;
+    private long count = 0;
     private List<SearchResult> data;
 
     public SearchResponse(boolean result, String error) {

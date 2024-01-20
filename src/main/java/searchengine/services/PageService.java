@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import searchengine.dto.config.JsoupConfig;
@@ -13,6 +14,7 @@ import searchengine.model.Page;
 import searchengine.repository.PageRepository;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Objects;
 
 @Slf4j
@@ -45,7 +47,7 @@ public class PageService
         return Objects.requireNonNull(Jsoup.parse(content).select(selector));
     }
 
-    public Page findPage(Page page) {
-        return repository.findBySiteIdAndPath(page.getSite().getId(), page.getPath());
+    public org.springframework.data.domain.Page<Page> getPagesByLemmasList(List<Integer> lemmas, Pageable pageable) {
+        return repository.findAllByLemmasIdIn(lemmas, pageable);
     }
 }
