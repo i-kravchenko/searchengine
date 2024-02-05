@@ -94,12 +94,12 @@ public class SearchServiceImpl implements SearchService {
                     String snippet = content.substring(start, end)
                             .replace(fragment.getFragment(), "<b>" + fragment.getFragment() + "</b>");
                     float relevance = getPageAbsRelevance(p);
-                    Element title = Objects.requireNonNull(pageService.getPageElements(p, "title").first());
+                    Element title = pageService.getPageElements(p, "title").first();
                     return new SearchResult(
                             site.getUrl(),
                             site.getName(),
                             p.getPath(),
-                            title.text(),
+                            title == null ? "Пустой заголовок" : title.text(),
                             snippet,
                             relevance
                     );

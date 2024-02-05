@@ -18,4 +18,6 @@ public interface LemmaRepository extends CrudRepository<Lemma, Integer>
 
     @Query("select MAX(frequency) from Lemma")
     Integer getMaxFrequency();
+
+    Integer countBySiteId(Integer id);
 }

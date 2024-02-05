@@ -14,4 +14,6 @@ public interface PageRepository extends PagingAndSortingRepository<Page, Integer
 
     @EntityGraph(attributePaths = {"lemmas"})
     org.springframework.data.domain.Page<Page> findAllByLemmasIdIn(Collection<Integer> lemmasId, Pageable pageable);
+
+    Integer countBySiteId(Integer id);
 }

@@ -104,4 +104,8 @@ public class LemmaService {
     public List<Lemma> findLemmas(Integer siteId, Set<String> lemmas) {
         return repository.findAllBySiteIdAndLemmaInAndFrequencyLessThanOrderByFrequency(siteId, lemmas, getFrequencyMaxValue());
     }
+
+    public Integer getCountBySiteId(Integer id) {
+        return repository.countBySiteId(id);
+    }
 }

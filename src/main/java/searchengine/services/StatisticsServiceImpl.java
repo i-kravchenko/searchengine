@@ -19,6 +19,8 @@ import java.util.List;
 public class StatisticsServiceImpl implements StatisticsService
 {
     private final SiteService siteService;
+    private final PageService pageService;
+    private final LemmaService lemmaService;
 
     @Override
     public StatisticsResponse getStatistics() {
@@ -32,8 +34,8 @@ public class StatisticsServiceImpl implements StatisticsService
             item.setName(site.getName());
             item.setUrl(site.getUrl());
             item.setId(site.getId());
-            int pages = site.getPages().size();
-            int lemmas = site.getLemmas().size();
+            int pages = pageService.getCountBySiteId(site.getId());
+            int lemmas = lemmaService.getCountBySiteId(site.getId());
             item.setPages(pages);
             item.setLemmas(lemmas);
             item.setStatus(site.getStatus().name());

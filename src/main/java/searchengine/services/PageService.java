@@ -44,10 +44,14 @@ public class PageService
 
     public Elements getPageElements(Page page, String selector) {
         String content = page.getContent();
-        return Objects.requireNonNull(Jsoup.parse(content).select(selector));
+        return Jsoup.parse(content).select(selector);
     }
 
     public org.springframework.data.domain.Page<Page> getPagesByLemmasList(List<Integer> lemmas, Pageable pageable) {
         return repository.findAllByLemmasIdIn(lemmas, pageable);
+    }
+
+    public Integer getCountBySiteId(Integer id) {
+        return repository.countBySiteId(id);
     }
 }
