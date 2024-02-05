@@ -48,7 +48,7 @@ public class PageService
     }
 
     public org.springframework.data.domain.Page<Page> getPagesByLemmasList(List<Integer> lemmas, Pageable pageable) {
-        return repository.findAllByLemmasIdIn(lemmas, pageable);
+        return repository.findDistinctByLemmasIdIn(lemmas, pageable);
     }
 
     public Integer getCountBySiteId(Integer id) {

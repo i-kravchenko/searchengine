@@ -98,14 +98,18 @@ public class LemmaService {
     }
 
     public List<Lemma> findLemmas(Set<String> lemmas) {
-        return repository.findAllByLemmaInAndFrequencyLessThanOrderByFrequency(lemmas, getFrequencyMaxValue());
+        return repository.findAllByLemmaInOrderByFrequency(lemmas);
     }
 
     public List<Lemma> findLemmas(Integer siteId, Set<String> lemmas) {
-        return repository.findAllBySiteIdAndLemmaInAndFrequencyLessThanOrderByFrequency(siteId, lemmas, getFrequencyMaxValue());
+        return repository.findAllBySiteIdAndLemmaInOrderByFrequency(siteId, lemmas);
     }
 
     public Integer getCountBySiteId(Integer id) {
         return repository.countBySiteId(id);
+    }
+
+    public Float getRelevance(Integer id, Set<String> searchQuerySet) {
+        return indexRepository.getSumRankByPageIdAndLemmasLemmaIn(id);
     }
 }

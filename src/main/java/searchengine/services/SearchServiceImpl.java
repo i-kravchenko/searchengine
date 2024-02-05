@@ -56,11 +56,6 @@ public class SearchServiceImpl implements SearchService {
             org.springframework.data.domain.Page<Page> page = pageService.getPagesByLemmasList(lemmasId, pageable);
             response.setCount(page.getTotalElements());
             List<Page> pages = page.getContent();
-            pages = pages.stream().peek(p -> p.setLemmas(p.getLemmas()
-                    .stream()
-                    .filter(lemma -> lemmasId.contains(lemma.getId()))
-                    .toList()
-            )).toList();
             List<SearchResult> data = getSearchResults(lemmaSet, pages);
             response.setData(data);
             log.info("Result of calling the search method: {}", response);
@@ -93,7 +88,7 @@ public class SearchServiceImpl implements SearchService {
                     int end = start + snippetSize + 1;
                     String snippet = content.substring(start, end)
                             .replace(fragment.getFragment(), "<b>" + fragment.getFragment() + "</b>");
-                    float relevance = getPageAbsRelevance(p);
+                    float relevance = lemmaService.getRelevance(p.getId(), searchQuerySet);
                     Element title = pageService.getPageElements(p, "title").first();
                     return new SearchResult(
                             site.getUrl(),
@@ -156,13 +151,5 @@ public class SearchServiceImpl implements SearchService {
             fragments.add(textFragment);
         }
         return fragments;
-    }
-
-    private float getPageAbsRelevance(Page page) {
-        Optional<Float> absRelevance = page.getLemmas()
-                .stream()
-                .map(lemma -> lemma.getPageRank(page))
-                .reduce(Float::sum);
-        return absRelevance.isPresent() ? absRelevance.get() : 0;
     }
 }
